@@ -1,0 +1,23 @@
+{
+    "encrypted": false,
+    "archer": {
+        "url": "https://archer-irm.com/archer",
+        "username": "trainer",
+        "password": "Archer@123",
+        "instance": "t202603",
+        "domain": ""
+    },
+    "snow": {
+        "url": "https://dev384260.service-now.com",
+        "username": "admin",
+        "password": "kz22DRssE+@P",
+        "auth": "basic",
+        "oauthToken": ""
+    },
+    "mapping": {
+        "as": {
+            "reportid": 12501
+        },
+        "sa": {}
+    }
+}
