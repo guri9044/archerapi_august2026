@@ -1,5 +1,9 @@
 {
+    "_comment": "Archer ↔ ServiceNow Integration Configuration",
+
     "encrypted": false,
+
+    "_comment_archer": "RSA Archer GRC Platform connection settings",
     "archer": {
         "url": "https://archer-irm.com/archer",
         "username": "trainer",
@@ -7,17 +11,76 @@
         "instance": "t202603",
         "domain": ""
     },
+
+    "_comment_snow": "ServiceNow instance connection settings (supports basic and oauth auth modes)",
     "snow": {
-        "url": "https://dev384260.service-now.com",
+        "url": "https://dev303234.service-now.com",
         "username": "admin",
-        "password": "kz22DRssE+@P",
+        "password": "FB@Q9gcw6jU/",
         "auth": "basic",
         "oauthToken": ""
     },
+
+    "_comment_mapping": "Field mapping rules for bi-directional sync. 'as' = Archer→ServiceNow, 'sa' = ServiceNow→Archer (planned)",
     "mapping": {
         "as": {
-            "reportid": 12501
+            "_comment_targetKeyField": "Archer field ID that stores the ServiceNow sys_id (used for create vs update detection)",
+            "targetKeyField":"28824",
+
+            "_comment_levelId": "Archer content level ID used when writing records back to Archer",
+            "levelId":62,
+
+            "_comment_reportid": "Archer saved-report ID used to pull Finding records for sync",
+            "reportid": 12501,
+
+            "_comment_fields": "Array of field mappings: archerFieldId → snowField. archerFieldType: 1=Text, 4=Values List (requires 'values' lookup map), 6=Tracking ID",
+            "fields": [
+                {
+                    "archerFieldId": 2670,
+                    "archerFieldName": "Name",
+                    "archerFieldType": 1,
+                    "snowField": "short_description"
+                },
+                {
+                    "archerFieldId": 2265,
+                    "archerFieldName": "Finding",
+                    "archerFieldType": 1,
+                    "snowField": "description"
+                },
+                {
+                    "_comment": "Values List field — Archer Criticality values mapped to ServiceNow priority integers",
+                    "archerFieldId": 4828,
+                    "archerFieldName": "Criticality",
+                    "archerFieldType": 4,
+                    "snowField": "priority",
+                    "values": {
+                        "High": 2,
+                        "Medium": 3,
+                        "Low": 4
+                    }
+                },
+                {
+                    "_comment": "Values List field — Archer workflow stages mapped to ServiceNow state integers",
+                    "archerFieldId": 18713,
+                    "archerFieldName": "Finding Workflow Stage",
+                    "archerFieldType": 4,
+                    "snowField": "state",
+                    "values": {
+                        "New": 1,
+                        "Approved": 3,
+                        "Awaiting Review": 0,
+                        "Remediation In Progress": 5
+                    }
+                },
+                {
+                    "archerFieldId": 17269,
+                    "archerFieldName": "Tracking Id",
+                    "archerFieldType": 6,
+                    "snowField": "u_archer_tracking_id"
+                }
+            ]
         },
+        "_comment_sa": "ServiceNow → Archer mapping (planned, not yet implemented)",
         "sa": {}
     }
 }
