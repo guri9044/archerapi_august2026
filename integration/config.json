@@ -1,8 +1,6 @@
 {
     "_comment": "Archer ↔ ServiceNow Integration Configuration",
-
     "encrypted": false,
-
     "_comment_archer": "RSA Archer GRC Platform connection settings",
     "archer": {
         "url": "https://archer-irm.com/archer",
@@ -11,28 +9,23 @@
         "instance": "t202603",
         "domain": ""
     },
-
     "_comment_snow": "ServiceNow instance connection settings (supports basic and oauth auth modes)",
     "snow": {
-        "url": "https://dev303234.service-now.com",
+        "url": "https://dev384260.service-now.com",
         "username": "admin",
-        "password": "FB@Q9gcw6jU/",
+        "password": "kz22DRssE+@P",
         "auth": "basic",
         "oauthToken": ""
     },
-
     "_comment_mapping": "Field mapping rules for bi-directional sync. 'as' = Archer→ServiceNow, 'sa' = ServiceNow→Archer (planned)",
     "mapping": {
         "as": {
             "_comment_targetKeyField": "Archer field ID that stores the ServiceNow sys_id (used for create vs update detection)",
-            "targetKeyField":"28824",
-
+            "targetKeyField": "28824",
             "_comment_levelId": "Archer content level ID used when writing records back to Archer",
-            "levelId":62,
-
+            "levelId": 62,
             "_comment_reportid": "Archer saved-report ID used to pull Finding records for sync",
             "reportid": 12501,
-
             "_comment_fields": "Array of field mappings: archerFieldId → snowField. archerFieldType: 1=Text, 4=Values List (requires 'values' lookup map), 6=Tracking ID",
             "fields": [
                 {
@@ -76,11 +69,102 @@
                     "archerFieldId": 17269,
                     "archerFieldName": "Tracking Id",
                     "archerFieldType": 6,
-                    "snowField": "u_archer_tracking_id"
+                    "snowField": "u_archer_trackig_id"
                 }
             ]
         },
         "_comment_sa": "ServiceNow → Archer mapping (planned, not yet implemented)",
-        "sa": {}
+        "sa": {
+            "targetLevelId": 96,
+            "sourceTable": "sn_grc_task",
+            "sourceQuery": "issue.u_archer_trackig_idISNOTEMPTY",
+            "sourceFields": "u_archer_remediation_plan_id,short_description,description,state,priority,sys_id,issue.u_archer_trackig_id,start_date,end_date,due_date",
+            "fields": [
+                {
+                    "archerFieldId": 4838,
+                    "archerFieldName": "Remediation Type",
+                    "archerFieldType": 4,
+                    "defaultValue": "4112"
+                },
+                {
+                    "archerFieldId": 4841,
+                    "archerFieldName": "Estimated Cost",
+                    "archerFieldType": 2,
+                    "defaultValue": "1000"
+                },
+                {
+                    "archerFieldId": 4847,
+                    "archerFieldName": "Remediation Plan Owner",
+                    "archerFieldType": 8,
+                    "defaultValue": "4397"
+                },
+                {
+                    "archerFieldId": 4971,
+                    "archerFieldName": "Remediation Plan Manager",
+                    "archerFieldType": 8,
+                    "defaultValue": "4397"
+                },
+                {
+                    "archerFieldId": 18710,
+                    "archerFieldName": "Submission Due Date",
+                    "archerFieldType": 3,
+                    "snowField": "due_date",
+                    "defaultValue": "2027-01-01"
+                },
+                {
+                    "archerFieldId": 4837,
+                    "archerFieldName": "Related Findings",
+                    "archerFieldType": 23,
+                    "snowField": "issue.u_archer_trackig_id"
+                },
+                {
+                    "archerFieldId": 4846,
+                    "archerFieldName": "Name",
+                    "archerFieldType": 1,
+                    "snowField": "short_description"
+                },
+                {
+                    "archerFieldId": 28844,
+                    "archerFieldName": "ServiceNow ID - Remediation task",
+                    "archerFieldType": 1,
+                    "snowField": "sys_id"
+                },
+                {
+                    "archerFieldId": 4840,
+                    "archerFieldName": "Description",
+                    "archerFieldType": 1,
+                    "snowField": "description",
+                    "defaultValue": "Description not found in ServiceNow"
+                },
+                {
+                    "archerFieldId": 4848,
+                    "archerFieldName": "Estimatd Start Date",
+                    "archerFieldType": 3,
+                    "snowField": "start_date",
+                    "defaultValue": "2027-01-01"
+                },
+                {
+                    "archerFieldId": 4849,
+                    "archerFieldName": "Estimated End Date",
+                    "archerFieldType": 3,
+                    "snowField": "end_date",
+                    "defaultValue": "2027-01-01"
+                },
+                {
+                    "archerFieldId": 7899,
+                    "archerFieldName": "Priority",
+                    "archerFieldType": 4,
+                    "snowField": "priority",
+                    "defaultValue": 67843,
+                    "values": {
+                        "1": 728,
+                        "2": 728,
+                        "3": 729,
+                        "4": 730,
+                        "5": 730
+                    }
+                }
+            ]
+        }
     }
 }

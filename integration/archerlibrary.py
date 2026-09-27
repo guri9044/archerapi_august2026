@@ -13,7 +13,9 @@ Capabilities:
 import requests
 import json
 import xmltodict
-
+import logging
+import datetime
+import os
 
 class archer:
     """Client for interacting with the RSA Archer GRC platform.
@@ -28,9 +30,22 @@ class archer:
         with open('integration/config.json') as file:
             config = json.load(file)
         self.config = config
-
+        currentDate = datetime.datetime.now().strftime("%Y.%m.%d")
+        logFileName = os.path.join("integration","logs",f"Archer.Integration.Log.{currentDate}.log")
+        '''self.logger = logging.getLogger(__name__)
+        loggerHandler = logging.FileHandler(logFileName)
+        loggerHandler.setLevel(logging.INFO)
+        loggerHandler.setFormatter(logging.Formatter("[%(levelname)s] - %(message)s"))
+        self.logger.addHandler(loggerHandler)'''
+        logging.basicConfig(
+            filename=logFileName,
+            filemode="a",
+            level=logging.INFO,
+            format="[%(levelname)s] - %(message)s"
+        )
         # Authenticate immediately so the session token is ready for use
         self.sessionToken = self.authenticate()
+        
 
     def authenticate(self):
         """Authenticate against the Archer Platform API and return a session token.
@@ -51,11 +66,22 @@ class archer:
                         }
 
         response = requests.post(url=url, headers=headers, json=requestBody)
-        resp = response.json()
-
-        # Extract the session token from the API response
-        SessionToken = resp['RequestedObject']['SessionToken']
-        return SessionToken
+        responseCode = response.status_code
+        if(responseCode != 200):
+            logging.info(f'[Archer] Unable to authenticate - {response.text}')
+            print(f'[Archer] Unable to authenticate - {response.text}')
+            exit()
+        else: 
+            resp = response.json()
+            if(resp['IsSuccessful']):
+            # Extract the session token from the API response
+                logging.info(f'[Archer] authentication done')
+                SessionToken = resp['RequestedObject']['SessionToken']
+                return SessionToken
+            else:
+                logging.critical(f'[Archer] Unable to authenticate - {resp["ValidationMessages"]}')
+                print(f'[Archer] Unable to authenticate - {resp["ValidationMessages"]}')
+                exit()
 
     def syncRecord(self, payload, method='create'):
         """Create or update an Archer content record via the Platform API.
@@ -77,6 +103,18 @@ class archer:
             response = requests.post(url, headers=headers, data=json.dumps(payload))
         elif(method == 'update'):
             response = requests.put(url, headers=headers, data=json.dumps(payload))
+        responseCode = response.status_code
+        if(responseCode != 200):
+            print(f'[Archer] Unable to {method} record - {response.text}')
+            logging.error(f'[Archer] Unable to {method} record - {response.text}')
+        else: 
+            resp = response.json()
+            print(resp)
+            if(resp['IsSuccessful']):
+                return response
+            else:
+                print(f'[Archer] Unable to {method} record - {resp["ValidationMessages"]}')
+                logging.error(f'[Archer] Unable to {method} record - {resp["ValidationMessages"]}')
 
     def getDataFromArcher(self):
         """Fetch ALL records from the configured Archer report, handling pagination.
@@ -88,17 +126,21 @@ class archer:
         data = self.SearchRecordsByReport()
         finalData = data["reportData"]["Records"]["Record"]
         iterations = data["iterations"]
-        print(iterations)
+        #print(iterations)
 
         # If more than one page, loop through remaining pages and merge results
         if(iterations > 1):
+            # +2 accounts for: integer-division truncation (may drop last partial page)
+            # and the fact that range(2, n) is exclusive of n (pages are 1-indexed).
             iterations += 2
             for i in range(2, iterations):
                 reportData = self.SearchRecordsByReport(pageNumber=i)
                 iterationData = reportData["reportData"]["Records"]["Record"]
                 finalData.extend(iterationData)
 
-        print(f"Final data set count - {len(finalData)}")
+        # Log the final merged record count before returning
+        print(f"[Archer] Final data set count - {len(finalData)}")
+        logging.info(f"[Archer] Final data set count - {len(finalData)}")
         return finalData
 
     def SearchRecordsByReport(self, pageNumber = 1):
@@ -123,23 +165,26 @@ class archer:
         # Form-encoded payload required by the SOAP endpoint
         payload = f'sessionToken={self.sessionToken}&reportIdOrGuid={reportId}&pageNumber={pageNumber}'
         headers = {
-        'Content-Type': 'application/x-www-form-urlencoded'
+            'Content-Type': 'application/x-www-form-urlencoded'
         }
 
         response = requests.post(url, headers=headers, data=payload)
-
+        responseCode = response.status_code
+        if(responseCode != 200):
+            print(f'[Archer] Unable to retrieve records from report {reportId} and page {pageNumber} - {response.text}')
+            logging.error(f'[Archer] Unable to retrieve records from report {reportId} and page {pageNumber} - {response.text}')
+        else: 
         # --- Two-pass XML → JSON conversion ---
         # 1st pass: parse the SOAP envelope (outer XML wrapper)
-        dataDict = xmltodict.parse(response.text)
-        jsonData = json.loads(json.dumps(dataDict))
+            dataDict = xmltodict.parse(response.text)
+            jsonData = json.loads(json.dumps(dataDict))
 
-        # 2nd pass: parse the inner XML payload embedded in the <string> element
-        dataDict2 = xmltodict.parse(jsonData["string"]["#text"])
-        reportData = json.loads(json.dumps(dataDict2))
+            # 2nd pass: parse the inner XML payload embedded in the <string> element
+            dataDict2 = xmltodict.parse(jsonData["string"]["#text"])
+            reportData = json.loads(json.dumps(dataDict2))
 
-        # Calculate pagination metadata
-        totalRecords = int(reportData["Records"]["@count"])
-        currentReportRecords = len(reportData["Records"]["Record"])
-        iterations = totalRecords // currentReportRecords
-
-        return {"iterations":iterations, "reportData":reportData}
+            # Calculate pagination metadata
+            totalRecords = int(reportData["Records"]["@count"])
+            currentReportRecords = len(reportData["Records"]["Record"])
+            iterations = totalRecords // currentReportRecords
+            return {"iterations":iterations, "reportData":reportData}

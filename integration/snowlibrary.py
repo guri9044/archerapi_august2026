@@ -12,7 +12,9 @@ Capabilities:
 
 import requests
 import json
-
+import logging
+import datetime
+import os
 
 class servicenow:
     """Client for interacting with the ServiceNow Table API.
@@ -27,7 +29,20 @@ class servicenow:
         with open('integration/config.json') as file:
             config = json.load(file)
         self.config = config
-
+        currentDate = datetime.datetime.now().strftime("%Y.%m.%d")
+        logFileName = os.path.join("integration","logs",f"ServiceNow.Integration.Log.{currentDate}.log")
+        '''self.logger = logging.getLogger(__name__)
+        loggerHandler = logging.FileHandler(logFileName)
+        loggerHandler.setLevel(logging.INFO)
+        loggerHandler.setFormatter(logging.Formatter("[%(levelname)s] - %(message)s"))
+        self.logger.addHandler(loggerHandler)
+        self.logger.info('servicenow api initiated...')'''
+        logging.basicConfig(
+            filename=logFileName,
+            filemode="a",
+            level=logging.INFO,
+            format="[%(levelname)s] - %(message)s"
+        )
         # Standard headers for JSON request/response
         self.headers = {"Content-Type":"application/json","Accept":"application/json"}
 
@@ -38,39 +53,6 @@ class servicenow:
         elif(self.config["snow"]["auth"] == "oauth"):
             # OAuth — placeholder; currently falls back to basic credentials
             self.auth = (self.config["snow"]["username"], self.config["snow"]["password"])
-
-    def createRecord(self, tableName, payload):
-        """Create a new record in the specified ServiceNow table.
-
-        Args:
-            tableName: ServiceNow table name (e.g., 'sn_grc_issue').
-            payload:   Dict of field name → value pairs for the new record.
-        """
-        config = self.config["snow"]
-        url = f'{config["url"]}/api/now/table/{tableName}'
-        response = requests.post(url=url, 
-                                auth=self.auth, 
-                                headers=self.headers, 
-                                data=json.dumps(payload))
-        print(response.json())
-
-    def updateRecord(self, tableName, sysid, payload):
-        """Update an existing ServiceNow record identified by sys_id.
-
-        Uses PATCH for partial updates (only the fields in payload are changed).
-
-        Args:
-            tableName: ServiceNow table name.
-            sysid:     The sys_id of the record to update.
-            payload:   Dict of field name → new value pairs.
-        """
-        config = self.config["snow"]
-        url = f'{config["url"]}/api/now/table/{tableName}/{sysid}'
-        response = requests.patch(url=url, 
-                                auth=self.auth, 
-                                headers=self.headers, 
-                                data=json.dumps(payload))
-        print(response.json())
 
     def syncRecord(self, tableName, payload, sysid=None):
         """Create or update a ServiceNow record (unified upsert method).
@@ -87,7 +69,7 @@ class servicenow:
             str: The sys_id of the resulting ServiceNow record.
         """
         config = self.config["snow"]
-
+        logging.info('servicenow api initiated...')
         if(sysid is None):
             # No sys_id → CREATE a new record via POST
             url = f'{config["url"]}/api/now/table/{tableName}'
@@ -102,31 +84,38 @@ class servicenow:
                                 auth=self.auth, 
                                 headers=self.headers, 
                                 data=json.dumps(payload))
-
+        
         result = response.json()
+        #print(result)  # Uncomment to debug the full API response payload
         return result["result"]["sys_id"]
 
-    def getRecords(self, tableName, query='', field=''):
+    def getRecords(self, tableName, query='', fields=''):
         """Retrieve records from a ServiceNow table with optional filtering.
 
         Args:
             tableName: ServiceNow table name to query.
             query:     Optional encoded query string (sysparm_query).
-            field:     Optional comma-separated field list (sysparm_fields)
+            fields:    Optional comma-separated field list (sysparm_fields)
                        to limit the columns returned.
+
+        Returns:
+            list: List of record dicts from the 'result' array of the API response.
         """
+        logging.info('servicenow api initiated...')
         config = self.config["snow"]
         url = f'{config["url"]}/api/now/table/{tableName}'
 
         # Append query parameters based on which filters are provided
-        if(query != '' and field != ''):
-            url = url+f'?sysparm_query={query}&sysparm_fields={field}'
+        if(query != '' and fields != ''):
+            url = url+f'?sysparm_query={query}&sysparm_fields={fields}'
         elif(query != ''):
             url = url+f'?sysparm_query={query}'
-        elif(field != ''):
-            url = url+f'?sysparm_fields={field}'
+        elif(fields != ''):
+            url = url+f'?sysparm_fields={fields}'
 
         response = requests.get(url=url,
                                 auth=self.auth,
                                 headers=self.headers)
-        print(len(response.json()["result"]))        
+        #print(response)  # Uncomment to debug the raw HTTP response object
+        print(len(response.json()["result"]))   # Log total record count fetched
+        return response.json()["result"]     
