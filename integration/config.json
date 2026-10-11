@@ -1,19 +1,19 @@
 {
     "_comment": "Archer ↔ ServiceNow Integration Configuration",
-    "encrypted": false,
+    "encryptionKey": "wMaKNv_n0m6CiSyh6G_eQPvmkWSm27qGbBTU9Gx3NT0=",
     "_comment_archer": "RSA Archer GRC Platform connection settings",
     "archer": {
         "url": "https://archer-irm.com/archer",
-        "username": "trainer",
-        "password": "Archer@123",
+        "username": "gAAAAABqyZ2T6x-UAKfDO-UkjMn_TxXsuSmkkLLOLyVSrWzJloVKTdyCWs1ASkAVbuk4lvdUt2xIsBuJcqtdAOwreKqUH8UaXw==",
+        "password": "gAAAAABqyZ2T3nsNmqWYoyV72rc7j7HUipnmBsyk_y3zk5gBaxeisgNTEbQOh1TtTWRMOpfU3JC0TV3GizGmn3SKPtk0zHVGzg==",
         "instance": "t202603",
         "domain": ""
     },
     "_comment_snow": "ServiceNow instance connection settings (supports basic and oauth auth modes)",
     "snow": {
         "url": "https://dev384260.service-now.com",
-        "username": "admin",
-        "password": "kz22DRssE+@P",
+        "username": "gAAAAABqyZ2T10LTEw9w7ZfjBnEX6U7uUhsIj65uCt4tgBqnfJPUWXTdLPDDD_eFdI6ztVrKSlz4GKCeGP0tsr5HKcSr02y47A==",
+        "password": "gAAAAABqyZ2ThU9V_cYdil2O3ZjvS2CV6Q5-m5aok533IQ9rCAf6Nc7qmuE7yODmDeWzMc6zW7B5cAOiVdqc39uYO2cAf_Cybw==",
         "auth": "basic",
         "oauthToken": ""
     },

@@ -15,6 +15,7 @@ import json
 import logging
 import datetime
 import os
+from ED import ed
 
 class servicenow:
     """Client for interacting with the ServiceNow Table API.
@@ -49,7 +50,8 @@ class servicenow:
         # Configure authentication based on the method specified in config
         if(self.config["snow"]["auth"] == "basic"):
             # HTTP Basic Auth — username:password tuple
-            self.auth = (self.config["snow"]["username"], self.config["snow"]["password"])
+            self.auth = (ed.decrypt(self.config["snow"]["username"].encode(),self.config['encryptionKey']), 
+                            ed.decrypt(self.config["snow"]["password"].encode(),self.config['encryptionKey']))
         elif(self.config["snow"]["auth"] == "oauth"):
             # OAuth — placeholder; currently falls back to basic credentials
             self.auth = (self.config["snow"]["username"], self.config["snow"]["password"])

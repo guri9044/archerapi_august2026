@@ -35,11 +35,14 @@ logging.basicConfig(
 arch = archer()
 snow = servicenow()
 
+arch.executeDataFeed("A4863EFA-48D9-4CB5-A555-E628496F69BB")
+
 # Load the shared configuration (field mapping, connection details, etc.)
 with open('integration/config.json') as file:
     config = json.load(file)
     logging.info('config loaded')
 
+"""
 # Retrieve all Archer Finding records via the configured report
 archerReportData = arch.getDataFromArcher()
 
@@ -63,11 +66,11 @@ for record in archerReportData:
             snowField = mapObj["snowField"]
 
             # Type 4 = Values List field → requires value translation via lookup map
-            if(int(mapObj["archerFieldType"]) == 4):
+            if(int(mapObj["archerFieldType"]) == 4 and "ListValues" in fieldData):
                 archerValue = fieldData["ListValues"]["ListValue"]["#text"]
                 targetSnowValue = mapObj["values"][archerValue]
                 input = targetSnowValue
-            else:
+            elif ("#text" in fieldData):
                 # Text / Numeric / other field types → pass value through directly
                 input = fieldData["#text"]
 
@@ -175,4 +178,10 @@ for rem in snowRem:
     else:
         # --- UPDATE path: Archer Remediation Plan already exists, update in place ---
         archerJSONRequest["Content"]["Id"] = existingRemPlanId
+        archerId = existingRemPlanId
         archerResponse = arch.syncRecord(payload=archerJSONRequest, method='update')
+    
+    workflowActions = arch.getWorkflowActions(archerId)
+    if("WorkflowNodeId" in workflowActions):
+        arch.performWorkflowActions(archerId, workflowActions["WorkflowNodeId"],workflowActions["Actions"][0]["CompletionCode"])
+        """

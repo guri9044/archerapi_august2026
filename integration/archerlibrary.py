@@ -16,6 +16,7 @@ import xmltodict
 import logging
 import datetime
 import os
+from ED import ed
 
 class archer:
     """Client for interacting with the RSA Archer GRC platform.
@@ -45,7 +46,83 @@ class archer:
         )
         # Authenticate immediately so the session token is ready for use
         self.sessionToken = self.authenticate()
-        
+
+    def getWorkflowActions(self, contentId):
+        """test"""
+        baseURL = self.config['archer']['url']
+        url = f"{baseURL}/api/core/system/WorkflowAction/{contentId}"
+        headers = {
+            'Authorization': f'Archer session-id="{self.sessionToken}"',
+            'Content-Type': 'application/json'
+            }
+        response = requests.get(url=url, headers=headers)
+        responseCode = response.status_code
+        print(response)
+        if(responseCode != 200):
+            logging.info(f'[Archer] Unable to get workflow actions - {response.text}')
+            print(f'[Archer]  Unable to get workflow actions - {response.text}')
+            exit()
+        else: 
+            resp = response.json()
+            if(resp['IsSuccessful']):
+            # Extract the session token from the API response
+                logging.info(f'[Archer] workflow actions received')
+                wActions = resp['RequestedObject']
+                print(wActions)
+                return wActions
+            else:
+                logging.critical(f'[Archer] Unable to get workflow actions - {resp["ValidationMessages"]}')
+                print(f'[Archer] Unable to get workflow actions - {resp["ValidationMessages"]}')
+
+    def performWorkflowActions(self, contentId, workflowAction, code):
+        """test"""
+        baseURL = self.config['archer']['url']
+        url = f"{baseURL}/api/core/system/WorkflowAction"
+        headers = {
+            'Authorization': f'Archer session-id="{self.sessionToken}"',
+            'Content-Type': 'application/json'
+            }
+        # Build the login request body from config values
+        requestBody = {
+                        "ContentId":contentId,
+                        "CompletionCode":code,
+                        "WorkflowNodeId":workflowAction
+                        }
+        response = requests.post(url=url, headers=headers, json=requestBody)
+        print(response)
+        responseCode = response.status_code
+        if(responseCode != 200):
+            logging.info(f'[Archer] Unable to perform workflow actions - {response.text}')
+            print(f'[Archer]  Unable to perform workflow actions - {response.text}')
+            exit()
+        else: 
+            resp = response.json()
+            print(resp)
+    def executeDataFeed(self, datafeedGUID):
+        """test"""
+        baseURL = self.config['archer']['url']
+        url = f"{baseURL}/platformapi/core/datafeed/execution"
+        headers = {
+            'Authorization': f'Archer session-id="{self.sessionToken}"',
+            'Content-Type': 'application/json'
+            }
+        # Build the login request body from config values
+        requestBody = {
+                        "DataFeedGuid":datafeedGUID,
+                        "IsReferenceFeedsIncluded":False
+                        }
+        response = requests.post(url=url, headers=headers, json=requestBody)
+        print(response)
+        responseCode = response.status_code
+        if(responseCode != 200):
+            logging.info(f'[Archer] Unable to perform workflow actions - {response.text}')
+            print(f'[Archer]  Unable to perform workflow actions - {response.text}')
+            exit()
+        else: 
+            resp = response.json()
+            print(resp)
+    
+    
 
     def authenticate(self):
         """Authenticate against the Archer Platform API and return a session token.
@@ -60,9 +137,9 @@ class archer:
         # Build the login request body from config values
         requestBody = {
                         "InstanceName":self.config['archer']['instance'],
-                        "Username":self.config['archer']['username'],
+                        "Username":ed.decrypt(self.config['archer']['username'].encode(),self.config['encryptionKey']),
                         "UserDomain":self.config['archer']['domain'],
-                        "Password":self.config['archer']['password']
+                        "Password":ed.decrypt(self.config['archer']['password'].encode(),self.config['encryptionKey'])
                         }
 
         response = requests.post(url=url, headers=headers, json=requestBody)
@@ -77,6 +154,7 @@ class archer:
             # Extract the session token from the API response
                 logging.info(f'[Archer] authentication done')
                 SessionToken = resp['RequestedObject']['SessionToken']
+                print("Archer Session Token - "+SessionToken)
                 return SessionToken
             else:
                 logging.critical(f'[Archer] Unable to authenticate - {resp["ValidationMessages"]}')
